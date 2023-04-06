@@ -19,10 +19,10 @@ Gramática de las figuras:
 -}
 
 
-data Dibujo a = Figura Fig
-                |Rotar a 
-                |Espejar a
-                |Rot45 a
+data Dibujo a = Figura a
+                |Rotar Dibujo a 
+                |Espejar Dibujo a
+                |Rot45 Dibujo a
                 |Apilar Float Float Dibujo a Dibujo a
                 |Juntar Float Float Dibujo a Dibujo a
                 |Encimar Dibujo a Dibujo a
@@ -38,7 +38,7 @@ comp f num dibu = case num>=0 of
 -- Construcción de dibujo. Abstraen los constructores.
 
 figura :: a -> Dibujo a
-figura lmnt = Dibujo lmnt
+figura lmnt = Figura lmnt
 
 rotar = undefined
 
@@ -58,32 +58,32 @@ r180 :: Dibujo a -> Dibujo a
 r180 dibu = comp Rotar 2 dibu
 
 r270 :: Dibujo a -> Dibujo a
-r270 dibu = comp Rot45 6 dibu
+r270 dibu = comp Rotar 3 dibu
 
 -- Pone una figura sobre la otra, ambas ocupan el mismo espacio.
 (.-.) :: Dibujo a -> Dibujo a -> Dibujo a
-(.-.) dibu1 dibu2 = Apilar 0.5 0.5 dibu1 dibu2
+(.-.) dibu1 dibu2 = Apilar 1.0 1.0 dibu1 dibu2
 
 -- Pone una figura al lado de la otra, ambas ocupan el mismo espacio.
 (///) :: Dibujo a -> Dibujo a -> Dibujo a
-(///) dibu1 dibu2 = Juntar 0.5 0.5 dibu1 dibu2
+(///) dibu1 dibu2 = Juntar 1.0 1.0 dibu1 dibu2
 
 -- Superpone una figura con otra.
 (^^^) :: Dibujo a -> Dibujo a -> Dibujo a
 (^^^) dibu1 dibu2 = Encimar dibu1 dibu2
 
 -- Dadas cuatro figuras las ubica en los cuatro cuadrantes.
-cuarteto = Dibujo a -> Dibujo a -> Dibujo a -> Dibujo a -> Dibujo a
-cuarteto d1 d2 d3 d4 = Apilar (Juntar d1 d2) (Juntar d3 d4)
+cuarteto :: Dibujo a -> Dibujo a -> Dibujo a -> Dibujo a -> Dibujo a
+cuarteto d1 d2 d3 d4 = (.-.) ((///) d1 d2) ((///) d3 d4)
 
 -- Una figura repetida con las cuatro rotaciones, superpuestas.
 encimar4 :: Dibujo a -> Dibujo a
-encimar4 dibu = Encimar (Encimar (Rot45 dibu) (Rot45 dibu)) (Encimar (Rot45 dibu) (Rot45 dibu))
+encimar4 dibu = (^^^) ((^^^) (dibu) (Rotar dibu)) ((^^^) (r180 dibu) (r270 dibu))
 
 -- Cuadrado con la misma figura rotada i * 90, para i ∈ {0, ..., 3}.
 -- No confundir con encimar4!
 ciclar :: Dibujo a -> Dibujo a
-ciclar dibu = cuarteto (dibu) (Rot45 dibu) (Rotar dibu) (comp Rot45 3 dibu)
+ciclar dibu = cuarteto (dibu) (Rotar dibu) (r180 dibu) (r270 dibu)
 
 -- Estructura general para la semántica (a no asustarse). Ayuda: 
 -- pensar en foldr y las definiciones de Floatro a la lógica
@@ -92,11 +92,41 @@ foldDib :: (a -> b) -> (b -> b) -> (b -> b) -> (b -> b) ->
        (Float -> Float -> b -> b -> b) -> 
        (b -> b -> b) ->
        Dibujo a -> b
-foldDib = undefined
+
+foldDib fig rot esp r45 api jun enc dibu = case dibu of
+                                            Figura lmnt ->  fig dibu
+                                            Rotar dibu2 ->  rot (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
+                                            Espejar dibu2-> esp (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
+                                            Rot45 dibu2  -> rot45 (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
+                                            Apilar f1 f2 dibu1 dibu2 -> api f1 f2 (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu1) (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
+                                            Juntar f1 f2 dibu1 dibu2 -> junt f1 f2 (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu1) (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
+                                            Encimar dibu1 dibu2 -> enc (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu1) (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
+
+
+-- foldDib figur rotar espejar rotar45 apilar juntar encimar (Encimar (Figura cuadrado) (Figura triangulo))
+
 
 -- Demostrar que `mapDib figura = id`
 mapDib :: (a -> Dibujo b) -> Dibujo a -> Dibujo b
-mapDib f dibu = 
+mapDib f dibu = case dibu of
+                    Figura dibu2 -> Figura (f dibu2)
+                    Rotar dibu2  -> Rotar (mapdDib f dibu2)
+                    Espejar dibu2-> Espejar (mapdDib f dibu2)
+                    Rot45 dibu2  -> Rot45 (mapdDib f dibu2)
+                    Apilar (fl1 fl2 dibu1 dibu2) -> Apilar (fl1 fl2 (mapdDib f dibu1) (mapdDib f dibu2))
+                    Juntar (fl1 fl2 dibu1 dibu2) -> Juntar (fl1 fl2 (mapdDib f dibu1) (mapdDib f dibu2))
+                    Encimar dibu1 dibu2 -> Encimar (mapdDib f dibu1) (mapdDib f dibu2)
 
 -- Junta todas las figuras básicas de un dibujo.
-figuras = undefined
+figuras :: Dibujo a  -> [a]
+figuras dibu = case dibu of
+                Figura dibu2 -> [dibu2]
+                Rotar dibu2  -> figuras dibu2
+                Espejar dibu2-> figuras dibu2
+                Rot45 dibu2  -> figuras dibu2
+                Apilar (fl1 fl2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
+                Juntar (fl1 fl2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
+                Encimar dibu1 dibu2 -> (figuras dibu1) ++ (figuras dibu2)
+
+figuras' :: Dibujo a -> [a]
+figuras' dibu = foldDib
