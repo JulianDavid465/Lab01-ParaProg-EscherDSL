@@ -39,7 +39,7 @@ comp f num dibu = case num>=0 of
 
 figura :: a -> Dibujo a
 figura lmnt = Figura lmnt
-
+{-
 rotar = undefined
 
 espejar = undefined
@@ -51,7 +51,7 @@ apilar = undefined
 juntar = undefined
 
 encimar = undefined
-
+-}
 
 -- Rotaciones de múltiplos de 90.
 r180 :: Dibujo a -> Dibujo a
@@ -94,13 +94,13 @@ foldDib :: (a -> b) -> (b -> b) -> (b -> b) -> (b -> b) ->
        Dibujo a -> b
 
 foldDib fig rot esp r45 api jun enc dibu = case dibu of
-                                            Figura lmnt ->  fig dibu
-                                            Rotar dibu2 ->  rot (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
-                                            Espejar dibu2-> esp (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
-                                            Rot45 dibu2  -> rot45 (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
-                                            Apilar f1 f2 dibu1 dibu2 -> api f1 f2 (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu1) (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
-                                            Juntar f1 f2 dibu1 dibu2 -> junt f1 f2 (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu1) (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
-                                            Encimar dibu1 dibu2 -> enc (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu1) (foldDib figur rotar espejar rotar45 apilar juntar encimar dibu2)
+                                             Figura  lmnt  ->             fig lmnt
+                                             Rotar   dibu2  ->            rot (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Espejar dibu2->              esp (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Rot45   dibu2  ->            rot45 (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Apilar  f1 f2 dibu1 dibu2 -> api f1 f2 (foldDib fig rot esp r45 api jun enc dibu1)   (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Juntar  f1 f2 dibu1 dibu2 -> junt f1 f2 (foldDib fig rot esp r45 api jun enc dibu1)  (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Encimar dibu1 dibu2 ->       enc (foldDib fig rot esp r45 api jun enc dibu1)         (foldDib fig rot esp r45 api jun enc dibu2)
 
 
 -- foldDib figur rotar espejar rotar45 apilar juntar encimar (Encimar (Figura cuadrado) (Figura triangulo))
@@ -109,24 +109,29 @@ foldDib fig rot esp r45 api jun enc dibu = case dibu of
 -- Demostrar que `mapDib figura = id`
 mapDib :: (a -> Dibujo b) -> Dibujo a -> Dibujo b
 mapDib f dibu = case dibu of
-                    Figura dibu2 -> Figura (f dibu2)
-                    Rotar dibu2  -> Rotar (mapdDib f dibu2)
-                    Espejar dibu2-> Espejar (mapdDib f dibu2)
-                    Rot45 dibu2  -> Rot45 (mapdDib f dibu2)
-                    Apilar (fl1 fl2 dibu1 dibu2) -> Apilar (fl1 fl2 (mapdDib f dibu1) (mapdDib f dibu2))
-                    Juntar (fl1 fl2 dibu1 dibu2) -> Juntar (fl1 fl2 (mapdDib f dibu1) (mapdDib f dibu2))
-                    Encimar dibu1 dibu2 -> Encimar (mapdDib f dibu1) (mapdDib f dibu2)
+                    Figura  dibu2 ->               Figura (f dibu2)
+                    Rotar   dibu2 ->               Rotar (mapdDib f dibu2)
+                    Espejar dibu2 ->               Espejar (mapdDib f dibu2)
+                    Rot45   dibu2 ->               Rot45 (mapdDib f dibu2)
+                    Apilar  (f1 f2 dibu1 dibu2) -> Apilar (f1 f2 (mapdDib f dibu1) (mapdDib f dibu2))
+                    Juntar  (f1 f2 dibu1 dibu2) -> Juntar (f1 f2 (mapdDib f dibu1) (mapdDib f dibu2))
+                    Encimar dibu1 dibu2 ->         Encimar (mapdDib f dibu1) (mapdDib f dibu2)
 
 -- Junta todas las figuras básicas de un dibujo.
 figuras :: Dibujo a  -> [a]
 figuras dibu = case dibu of
-                Figura dibu2 -> [dibu2]
-                Rotar dibu2  -> figuras dibu2
-                Espejar dibu2-> figuras dibu2
-                Rot45 dibu2  -> figuras dibu2
-                Apilar (fl1 fl2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
-                Juntar (fl1 fl2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
-                Encimar dibu1 dibu2 -> (figuras dibu1) ++ (figuras dibu2)
+                Figura   dibu2 ->                [dibu2]
+                Rotar    dibu2 ->                figuras dibu2
+                Espejar  dibu2 ->                figuras dibu2
+                Rot45    dibu2 ->                figuras dibu2
+                Apilar   (f1 f2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
+                Juntar   (f1 f2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
+                Encimar  dibu1 dibu2 ->         (figuras dibu1) ++ (figuras dibu2)
 
+-- Version de figuras con foldDib
 figuras' :: Dibujo a -> [a]
-figuras' dibu = foldDib
+figuras' dibu = foldDib (/x -> [x]) id id id (/f1 f2 dibu1 dibu2 -> (figuras' dibu1) ++ (figuras' dibu2)) 
+                                             (/f1 f2 dibu1 dibu2 -> (figuras' dibu1) ++ (figuras' dibu2)) 
+                                             (/dibu1 dibu2    ->    (figuras' dibu1) ++ (figuras' dibu2))
+-- (Encimar (Figura cuadrado) (Figura triangulo))
+-- (Figura cuadrado)
