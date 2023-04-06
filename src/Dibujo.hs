@@ -20,12 +20,12 @@ Gramática de las figuras:
 
 
 data Dibujo a = Figura a
-                |Rotar Dibujo a 
-                |Espejar Dibujo a
-                |Rot45 Dibujo a
-                |Apilar Float Float Dibujo a Dibujo a
-                |Juntar Float Float Dibujo a Dibujo a
-                |Encimar Dibujo a Dibujo a
+                |Rotar (Dibujo a) 
+                |Espejar (Dibujo a)
+                |Rot45 (Dibujo a)
+                |Apilar Float Float (Dibujo a) (Dibujo a)
+                |Juntar Float Float (Dibujo a) (Dibujo a)
+                |Encimar (Dibujo a) (Dibujo a)
     deriving (Eq, Show)
 
 comp :: (a -> a) -> Int -> a -> a
@@ -39,19 +39,24 @@ comp f num dibu = case num>=0 of
 
 figura :: a -> Dibujo a
 figura lmnt = Figura lmnt
-{-
-rotar = undefined
 
-espejar = undefined
+rotar :: Dibujo a -> Dibujo a
+rotar dibu = Rotar dibu
 
-rot45 = undefined
+espejar :: Dibujo a -> Dibujo a
+espejar dibu = Espejar dibu
 
-apilar = undefined
+rot45 :: Dibujo a -> Dibujo a
+rot45 dibu = Rot45 dibu
 
-juntar = undefined
+apilar :: Float -> Float -> Dibujo a -> Dibujo a -> Dibujo a
+apilar f1 f2 dibu1 dibu2 = Apilar f1 f2 dibu1 dibu2
 
-encimar = undefined
--}
+juntar :: Float -> Float -> Dibujo a -> Dibujo a -> Dibujo a
+juntar f1 f2 dibu1 dibu2 = Juntar f1 f2 dibu1 dibu2
+
+encimar :: Dibujo a -> Dibujo a -> Dibujo a
+encimar dibu1 dibu2 = Encimar dibu1 dibu2
 
 -- Rotaciones de múltiplos de 90.
 r180 :: Dibujo a -> Dibujo a
@@ -97,10 +102,10 @@ foldDib fig rot esp r45 api jun enc dibu = case dibu of
                                              Figura  lmnt  ->             fig lmnt
                                              Rotar   dibu2  ->            rot (foldDib fig rot esp r45 api jun enc dibu2)
                                              Espejar dibu2->              esp (foldDib fig rot esp r45 api jun enc dibu2)
-                                             Rot45   dibu2  ->            rot45 (foldDib fig rot esp r45 api jun enc dibu2)
-                                             Apilar  f1 f2 dibu1 dibu2 -> api f1 f2 (foldDib fig rot esp r45 api jun enc dibu1)   (foldDib fig rot esp r45 api jun enc dibu2)
-                                             Juntar  f1 f2 dibu1 dibu2 -> junt f1 f2 (foldDib fig rot esp r45 api jun enc dibu1)  (foldDib fig rot esp r45 api jun enc dibu2)
-                                             Encimar dibu1 dibu2 ->       enc (foldDib fig rot esp r45 api jun enc dibu1)         (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Rot45   dibu2  ->            r45 (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Apilar  f1 f2 dibu1 dibu2 -> api  f1 f2 (foldDib fig rot esp r45 api jun enc dibu1) (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Juntar  f1 f2 dibu1 dibu2 -> jun  f1 f2 (foldDib fig rot esp r45 api jun enc dibu1) (foldDib fig rot esp r45 api jun enc dibu2)
+                                             Encimar dibu1 dibu2 ->       enc (foldDib fig rot esp r45 api jun enc dibu1)        (foldDib fig rot esp r45 api jun enc dibu2)
 
 
 -- foldDib figur rotar espejar rotar45 apilar juntar encimar (Encimar (Figura cuadrado) (Figura triangulo))
@@ -109,29 +114,30 @@ foldDib fig rot esp r45 api jun enc dibu = case dibu of
 -- Demostrar que `mapDib figura = id`
 mapDib :: (a -> Dibujo b) -> Dibujo a -> Dibujo b
 mapDib f dibu = case dibu of
-                    Figura  dibu2 ->               Figura (f dibu2)
-                    Rotar   dibu2 ->               Rotar (mapdDib f dibu2)
-                    Espejar dibu2 ->               Espejar (mapdDib f dibu2)
-                    Rot45   dibu2 ->               Rot45 (mapdDib f dibu2)
-                    Apilar  (f1 f2 dibu1 dibu2) -> Apilar (f1 f2 (mapdDib f dibu1) (mapdDib f dibu2))
-                    Juntar  (f1 f2 dibu1 dibu2) -> Juntar (f1 f2 (mapdDib f dibu1) (mapdDib f dibu2))
-                    Encimar dibu1 dibu2 ->         Encimar (mapdDib f dibu1) (mapdDib f dibu2)
+                    Figura  dibu2 ->               f dibu2
+                    Rotar   dibu2 ->               Rotar (mapDib f dibu2)
+                    Espejar dibu2 ->               Espejar (mapDib f dibu2)
+                    Rot45   dibu2 ->               Rot45 (mapDib f dibu2)
+                    Apilar  f1 f2 dibu1 dibu2   -> Apilar f1 f2 (mapDib f dibu1) (mapDib f dibu2)
+                    Juntar  f1 f2 dibu1 dibu2   -> Juntar f1 f2 (mapDib f dibu1) (mapDib f dibu2)
+                    Encimar dibu1 dibu2 ->         Encimar (mapDib f dibu1) (mapDib f dibu2)
 
 -- Junta todas las figuras básicas de un dibujo.
-figuras :: Dibujo a  -> [a]
+{-figuras :: Dibujo a  -> [a]
 figuras dibu = case dibu of
                 Figura   dibu2 ->                [dibu2]
                 Rotar    dibu2 ->                figuras dibu2
                 Espejar  dibu2 ->                figuras dibu2
                 Rot45    dibu2 ->                figuras dibu2
-                Apilar   (f1 f2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
-                Juntar   (f1 f2 dibu1 dibu2) -> (figuras dibu1) ++ (figuras dibu2)
+                Apilar   f1 f2 dibu1 dibu2   -> (figuras dibu1) ++ (figuras dibu2)
+                Juntar   f1 f2 dibu1 dibu2   -> (figuras dibu1) ++ (figuras dibu2)
                 Encimar  dibu1 dibu2 ->         (figuras dibu1) ++ (figuras dibu2)
-
+-}
 -- Version de figuras con foldDib
-figuras' :: Dibujo a -> [a]
-figuras' dibu = foldDib (/x -> [x]) id id id (/f1 f2 dibu1 dibu2 -> (figuras' dibu1) ++ (figuras' dibu2)) 
-                                             (/f1 f2 dibu1 dibu2 -> (figuras' dibu1) ++ (figuras' dibu2)) 
-                                             (/dibu1 dibu2    ->    (figuras' dibu1) ++ (figuras' dibu2))
+figuras :: Dibujo a -> [a]
+figuras dibu = foldDib (\x -> [x]) id id id (\f1 f2 xs ys ->  xs ++ ys) 
+                                             (\f1 f2 xs ys ->  xs ++ ys) 
+                                             (\xs ys    ->     xs ++ ys)
+                                             dibu
 -- (Encimar (Figura cuadrado) (Figura triangulo))
 -- (Figura cuadrado)

@@ -7,8 +7,17 @@ type Pred a = a -> Bool
 
 -- Dado un predicado sobre básicas, cambiar todas las que satisfacen
 -- el predicado por la figura básica indicada por el segundo argumento.
-cambiar = undefined
+cambiar :: Pred a -> (a -> Dibujo a) -> Dibujo a -> Dibujo a
+cambiar pre fun dibu = mapDib fun dibu
 
+cambiarPb :: Pred a -> (a -> Dibujo a) -> Dibujo a -> Dibujo a
+cambiarPb pre fun dibu = foldDib (applyfun lmnt) id id id 
+                                                  (apilar f1 f2 (cambiarPb pre fun d1) (cambiarPb pre fun d2))
+                                                  (juntar f1 f2 (cambiarPb pre fun d1) (cambiarPb pre fun d2))
+                                                  (encimar (cambiarPb pre fun d1) (cambiarPb pre fun d2))
+                                  where applyfun lmnt = case pre lmnt of
+                                                          true = fun lmnt
+                                                          false= id
 
 -- Alguna básica satisface el predicado.
 anyDib = undefined
