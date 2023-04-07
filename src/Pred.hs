@@ -20,13 +20,17 @@ cambiar pre fun dibu = foldDib (\lmnt -> applyfun lmnt) id id id
                                                           False ->figura lmnt
 
 -- Alguna básica satisface el predicado.
-anyDib = undefined
+anyDib :: Pred a -> Dibujo a -> Bool
+anyDib pre dibu = foldl (\x y -> x || pre y) False (figuras dibu)
 
 -- Todas las básicas satisfacen el predicado.
-allDib = undefined
+allDib :: Pred a -> Dibujo a -> Bool
+allDib pre dibu = foldl (\x y -> x && pre y) True (figuras dibu)
 
 -- Los dos predicados se cumplen para el elemento recibido.
-andP = undefined
+andP :: Pred a -> Pred a -> Pred a
+andP pre1 pre2 lmnt = (pre1 lmnt) && (pre2 lmnt)
 
 -- Algún predicado se cumple para el elemento recibido.
-orP = undefined
+orP :: Pred a -> Pred a -> Pred a
+orP pre1 pre2 lmnt = (pre1 lmnt) || (pre2 lmnt)
